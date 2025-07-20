@@ -23,7 +23,7 @@ public class SushiRestaurant : ModuleRules
 		PrivateDependencyModuleNames.AddRange(new string[] { });
 
 		PublicIncludePaths.AddRange(new string[] {
-			"SushiRestaurant",
+			"SushiRestaurant/Public",
 			"SushiRestaurant/Variant_Platforming",
 			"SushiRestaurant/Variant_Combat",
 			"SushiRestaurant/Variant_Combat/AI",
@@ -32,12 +32,16 @@ public class SushiRestaurant : ModuleRules
 			"SushiRestaurant/Variant_SideScrolling/AI"
 		});
 
-		// Uncomment if you are using Slate UI
-		// PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
+        PrivateIncludePaths.AddRange(new string[] {
+			"SushiRestaurant/Public"
+		});
 
-		// Uncomment if you are using online features
-		// PrivateDependencyModuleNames.Add("OnlineSubsystem");
+        // Uncomment if you are using Slate UI
+        // PrivateDependencyModuleNames.AddRange(new string[] { "Slate", "SlateCore" });
 
-		// To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
-	}
+        // Uncomment if you are using online features
+        // PrivateDependencyModuleNames.Add("OnlineSubsystem");
+
+        // To include OnlineSubsystemSteam, add it to the plugins section in your uproject file with the Enabled attribute set to true
+    }
 }
