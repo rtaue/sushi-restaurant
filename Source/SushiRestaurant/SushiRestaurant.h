@@ -5,3 +5,4 @@
 #include "CoreMinimal.h"
 
 DECLARE_LOG_CATEGORY_EXTERN(LogSushiInteraction, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogCookableComponent, Log, All);
