@@ -6,6 +6,8 @@
 #include "GameFramework/PlayerController.h"
 #include "SushiRestaurantPlayerController.generated.h"
 
+struct FInputActionValue;
+class UInputAction;
 class UInputMappingContext;
 
 /**
@@ -26,4 +28,13 @@ protected:
 	/** Input mapping context setup */
 	virtual void SetupInputComponent() override;
 
+	void PerformInteractionTrace();
+
+	UPROPERTY(EditDefaultsOnly, Category="Input")
+	UInputAction* InteractAction;
+
+	void OnInteract(const FInputActionValue& Value);
+
+	UFUNCTION(Server, Reliable)
+	void Server_OnInteract();
 };
