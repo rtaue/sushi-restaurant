@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Net/UnrealNetwork.h"
 #include "SushiRestaurant/SushiRestaurant.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
@@ -55,6 +56,13 @@ ASushiRestaurantCharacter::ASushiRestaurantCharacter()
 	ItemAttachPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ItemAttachPoint"));
 	ItemAttachPoint->SetupAttachment(GetMesh()); // Or RootComponent
 	ItemAttachPoint->SetRelativeLocation(FVector(50.f, 0.f, 50.f));
+}
+
+void ASushiRestaurantCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ThisClass, HeldItem);
 }
 
 void ASushiRestaurantCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)

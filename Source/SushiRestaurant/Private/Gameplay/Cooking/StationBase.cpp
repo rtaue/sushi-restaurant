@@ -9,6 +9,7 @@
 AStationBase::AStationBase()
 {
 	PrimaryActorTick.bCanEverTick = false;
+	bReplicates = true;
 
 	Mesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("Mesh"));
 	RootComponent = Mesh;

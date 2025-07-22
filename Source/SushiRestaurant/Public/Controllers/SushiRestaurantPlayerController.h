@@ -32,6 +32,13 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category="Input")
 	UInputAction* InteractAction;
+	
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category ="Interaction", meta = (AllowPrivateAccess = "true"))
+	float InteractionRange = 200.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category ="Interaction", meta = (AllowPrivateAccess = "true"))
+	float InteractionCapsuleRadius = 50.f;
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category ="Interaction", meta = (AllowPrivateAccess = "true"))
+	float InteractionCapsuleHalfHeight = 75.f;
 
 	void OnInteract(const FInputActionValue& Value);
 

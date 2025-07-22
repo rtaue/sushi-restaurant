@@ -52,7 +52,9 @@ protected:
 public:
 
 	/** Constructor */
-	ASushiRestaurantCharacter();	
+	ASushiRestaurantCharacter();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
 
@@ -96,7 +98,7 @@ public:
 #pragma region Cooking
 
 	// The currently held item (if any)
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Inventory")
+	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Inventory")
 	AActor* HeldItem;
 
 	// Location to attach the item visually

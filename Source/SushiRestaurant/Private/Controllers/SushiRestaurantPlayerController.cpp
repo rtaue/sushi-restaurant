@@ -36,26 +36,30 @@ void ASushiRestaurantPlayerController::PerformInteractionTrace()
 	if (!ControlledPawn) return;
 
 	const FVector Start = ControlledPawn->GetActorLocation();
-	const FVector Forward = ControlledPawn->GetActorForwardVector();
-	const FVector End = Start + Forward * 200.f;
+	const FVector ForwardVector = ControlledPawn->GetActorForwardVector();
+	const FVector End = Start + ForwardVector * InteractionRange; // Interaction radius
 
-	FHitResult Hit;
+	// Collision params
 	FCollisionQueryParams Params;
 	Params.AddIgnoredActor(ControlledPawn);
 
-	// Draw line for debug
-	DrawDebugLine(GetWorld(), Start, End, FColor::Green, false, 1.f, 0, 2.f);
+	// Defines collision shape
+	const FCollisionShape CollisionShape = FCollisionShape::MakeCapsule(InteractionCapsuleRadius, InteractionCapsuleHalfHeight);
 
-	if (GetWorld()->LineTraceSingleByChannel(Hit, Start, End, ECC_Visibility, Params))
+	// Draw debug
+	DrawDebugCapsule(GetWorld(), (Start + End) / 2, InteractionCapsuleHalfHeight, InteractionCapsuleRadius, FRotationMatrix::MakeFromZ(End - Start).ToQuat(), FColor::Green, false, 1.f, 0, 2.f);
+
+	// Sweep
+	FHitResult Hit;
+	if (GetWorld()->SweepSingleByChannel(Hit, Start, End, FQuat::Identity, ECC_Visibility, CollisionShape, Params))
 	{
 		if (AActor* HitActor = Hit.GetActor())
 		{
-			UE_LOG(LogSushiInteraction, Log, TEXT("Trace hit actor: %s"), *HitActor->GetName());
+			UE_LOG(LogSushiInteraction, Log, TEXT("Capsule sweep hit actor: %s"), *HitActor->GetName());
 
 			if (HitActor->Implements<UInteractableInterface>())
 			{
 				UE_LOG(LogSushiInteraction, Log, TEXT("Actor %s implements IInteractableInterface"), *HitActor->GetName());
-
 				IInteractableInterface::Execute_Interact(HitActor, ControlledPawn);
 			}
 			else
@@ -66,7 +70,7 @@ void ASushiRestaurantPlayerController::PerformInteractionTrace()
 	}
 	else
 	{
-		UE_LOG(LogSushiInteraction, Verbose, TEXT("Nothing hit by interaction trace."));
+		UE_LOG(LogSushiInteraction, Verbose, TEXT("Nothing hit by interaction capsule sweep."));
 	}
 }
 
@@ -74,14 +78,25 @@ void ASushiRestaurantPlayerController::OnInteract(const FInputActionValue& Value
 {
 	if (IsLocalController())
 	{
-		UE_LOG(LogSushiInteraction, Log, TEXT("OnInteract triggered locally"));
-		Server_OnInteract();
+		UE_LOG(LogSushiInteraction, Verbose, TEXT("OnInteract triggered locally"));
+
+		// Avoid spamming
+		if (!IsPaused())
+		{
+			Server_OnInteract();
+		}
 	}
 }
 
 void ASushiRestaurantPlayerController::Server_OnInteract_Implementation()
 {
-	UE_LOG(LogSushiInteraction, Log, TEXT("Server_OnInteract executed"));
+	UE_LOG(LogSushiInteraction, Verbose, TEXT("Server_OnInteract executed"));
+
+	if (const APawn* ControlledPawn = GetPawn(); !ControlledPawn)
+	{
+		UE_LOG(LogSushiInteraction, Warning, TEXT("No controlled pawn to interact with"));
+		return;
+	}
 	
 	PerformInteractionTrace();
 }
