@@ -110,6 +110,7 @@ public:
 	// Pickup and drop methods
 	void PickupItem(AActor* Item);
 	void DropItem();
+	UFUNCTION(BlueprintPure)
 	bool IsHoldingItem() const { return HeldItem != nullptr; }
 
 	// Station lock methods
