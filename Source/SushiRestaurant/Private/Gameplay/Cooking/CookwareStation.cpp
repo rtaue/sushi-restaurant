@@ -51,6 +51,8 @@ void ACookwareStation::Interact_Implementation(AActor* Interactor)
 
 					// Attach to station's anchor point
 					Item->AttachToComponent(IngredientAnchor, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+
+					CurrentHeldItem = Item;
 				}
 				
 				Character->LockToStation(this);
@@ -62,12 +64,45 @@ void ACookwareStation::Interact_Implementation(AActor* Interactor)
 				Cookable->StartCooking(CookingTime, this);
 			}
 		}
+		else if (CurrentHeldItem)
+		{
+			Character->PickupItem(CurrentHeldItem);
+			CurrentHeldItem = nullptr;
+		}
 	}
 }
 
 void ACookwareStation::OnIngredientCooked(AActor* CookedActor)
 {
-	if (CurrentUser && CurrentUser->LockedStation == this)
+	if (const UCookableComponent* Cookable = CookedActor->FindComponentByClass<UCookableComponent>())
+	{
+		// Spawn the next stage of the ingredient
+		if (Cookable->ResultActorClass)
+		{
+			const FVector SpawnLocation = CookedActor->GetActorLocation();
+			const FRotator SpawnRotation = CookedActor->GetActorRotation();
+            
+			// Destroy current
+			CookedActor->Destroy();
+
+			// Spawn new processed actor
+			AActor* NewResult = GetWorld()->SpawnActor<AActor>(
+				Cookable->ResultActorClass,
+				SpawnLocation,
+				SpawnRotation
+			);
+
+			// Attach to station
+			if (NewResult)
+			{
+				NewResult->AttachToComponent(IngredientAnchor, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+				CurrentHeldItem = NewResult;
+			}
+		}
+	}
+
+	// Unlock player after cooking
+	if (CurrentUser)
 	{
 		CurrentUser->UnlockFromStation();
 		CurrentUser = nullptr;

@@ -45,6 +45,13 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FCookingFinishedSignature OnCookingFinished;
 
+	// Result actor when prepared
+	UPROPERTY(EditDefaultsOnly, Category = "Cooking")
+	TSubclassOf<AActor> ResultActorClass;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Cooking")
+	FName ProcessName; // "Chopped", "Boiled", etc.
+
 protected:
 	/// Registers replicated properties
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;

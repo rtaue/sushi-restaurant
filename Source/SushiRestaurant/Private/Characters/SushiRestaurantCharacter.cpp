@@ -144,16 +144,18 @@ void ASushiRestaurantCharacter::PickupItem(AActor* Item)
 	if (!Item || HeldItem) return;
 
 	HeldItem = Item;
-	Item->AttachToComponent(ItemAttachPoint, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
-	Item->SetActorEnableCollision(false);
+
+	// Attach to character socket
+	Item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, "ItemSocket");
 	
-	// Disable physics on root component
-	// if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(Item->GetRootComponent()))
-	// {
-	// 	Root->SetSimulatePhysics(false);
-	// }
-	
-	UE_LOG(LogSushiRestaurantCharacter, Log, TEXT("Picked up %s"), *Item->GetName());
+	// Disable physics and collision
+	if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(Item->GetRootComponent()))
+	{
+		Root->SetSimulatePhysics(false);
+		Root->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
+
+	UE_LOG(LogSushiRestaurantCharacter, Log, TEXT("Picked up item: %s"), *Item->GetName());
 }
 
 void ASushiRestaurantCharacter::DropItem()
@@ -161,13 +163,12 @@ void ASushiRestaurantCharacter::DropItem()
 	if (!HeldItem) return;
 
 	HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-	HeldItem->SetActorEnableCollision(true);
 
-	// Enable physics on root component
-	// if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(HeldItem->GetRootComponent()))
-	// {
-	// 	Root->SetSimulatePhysics(true);
-	// }
+	if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(HeldItem->GetRootComponent()))
+	{
+		Root->SetSimulatePhysics(true);
+		Root->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+	}
 	
 	UE_LOG(LogSushiRestaurantCharacter, Log, TEXT("Dropped %s"), *HeldItem->GetName());
 
@@ -184,7 +185,7 @@ void ASushiRestaurantCharacter::LockToStation(AActor* Station)
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		PC->SetIgnoreMoveInput(true);
-		PC->SetIgnoreLookInput(true);
+		// PC->SetIgnoreLookInput(true);
 	}
 }
 
@@ -197,7 +198,7 @@ void ASushiRestaurantCharacter::UnlockFromStation()
 	if (APlayerController* PC = Cast<APlayerController>(GetController()))
 	{
 		PC->SetIgnoreMoveInput(false);
-		PC->SetIgnoreLookInput(false);
+		// PC->SetIgnoreLookInput(false);
 	}
 
 	LockedStation = nullptr;

@@ -38,6 +38,10 @@ protected:
 	UPROPERTY()
 	ASushiRestaurantCharacter* CurrentUser;
 
+	// The item currently at the station
+	UPROPERTY()
+	AActor* CurrentHeldItem;
+
 	UFUNCTION()
 	void OnIngredientCooked(AActor* CookedActor);
 };
