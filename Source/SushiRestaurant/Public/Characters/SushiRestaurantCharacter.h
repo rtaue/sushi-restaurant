@@ -92,5 +92,31 @@ public:
 
 	/** Returns FollowCamera subobject **/
 	FORCEINLINE class UCameraComponent* GetFollowCamera() const { return FollowCamera; }
+
+#pragma region Cooking
+
+	// The currently held item (if any)
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Inventory")
+	AActor* HeldItem;
+
+	// Location to attach the item visually
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
+	USceneComponent* ItemAttachPoint;
+
+	// The currently station locked to
+	UPROPERTY()
+	AActor* LockedStation;
+
+	// Pickup and drop methods
+	void PickupItem(AActor* Item);
+	void DropItem();
+	bool IsHoldingItem() const { return HeldItem != nullptr; }
+
+	// Station lock methods
+	void LockToStation(AActor* Station);
+	void UnlockFromStation();
+	bool IsLocked() const { return LockedStation != nullptr; }
+
+#pragma endregion
 };
 

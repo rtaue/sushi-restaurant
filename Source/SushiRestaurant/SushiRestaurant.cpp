@@ -7,4 +7,6 @@ IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, SushiRestaurant, "SushiRe
 
 DEFINE_LOG_CATEGORY(LogSushiInteraction);
 DEFINE_LOG_CATEGORY(LogCookableComponent);
+DEFINE_LOG_CATEGORY(LogCookwareStation);
+DEFINE_LOG_CATEGORY(LogSushiRestaurantCharacter);
  

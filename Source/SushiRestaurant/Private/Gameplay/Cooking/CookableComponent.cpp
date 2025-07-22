@@ -18,15 +18,26 @@ UCookableComponent::UCookableComponent()
 	CookingState = ECookingState::Raw;
 }
 
-void UCookableComponent::StartCooking(float Duration)
+void UCookableComponent::StartCooking(float Duration, AActor* StationActor)
 {
-	// Only allow the server to start cooking and only if the state is Raw
-	if (GetOwnerRole() == ROLE_Authority && CookingState == ECookingState::Raw)
+	if (GetOwnerRole() == ROLE_Authority && CookingState == ECookingState::Raw && StationActor)
 	{
-		UE_LOG(LogCookableComponent, Log, TEXT("%s started cooking"), *GetOwner()->GetName());
+		AActor* Owner = GetOwner();
+		if (!Owner) return;
 
-		// Change state to Processing and start timer
 		CookingState = ECookingState::Processing;
+		AttachedStation = StationActor;
+
+		// Disable physics and collision
+		Owner->SetActorEnableCollision(false);
+
+		if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(Owner->GetRootComponent()))
+		{
+			Root->SetSimulatePhysics(false);
+		}
+
+		// Attach to station for visual lock
+		Owner->AttachToActor(StationActor, FAttachmentTransformRules::KeepWorldTransform);
 
 		GetWorld()->GetTimerManager().SetTimer(
 			CookingTimer,
@@ -35,16 +46,35 @@ void UCookableComponent::StartCooking(float Duration)
 			Duration,
 			false
 		);
+
+		UE_LOG(LogCookableComponent, Log, TEXT("%s started cooking at station %s"), *Owner->GetName(), *StationActor->GetName());
 	}
 }
 
 void UCookableComponent::OnCookingComplete()
 {
-	// Server updates state to Cooked when timer finishes
 	if (GetOwnerRole() == ROLE_Authority)
 	{
+		AActor* Owner = GetOwner();
+		if (!Owner) return;
+
 		CookingState = ECookingState::Cooked;
-		UE_LOG(LogCookableComponent, Log, TEXT("%s finished cooking"), *GetOwner()->GetName());
+
+		// // Detach and re-enable collision/physics
+		// Owner->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+		// Owner->SetActorEnableCollision(true);
+		//
+		// if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(Owner->GetRootComponent()))
+		// {
+		// 	Root->SetSimulatePhysics(true);
+		// }
+		//
+		// AttachedStation = nullptr;
+
+		UE_LOG(LogCookableComponent, Log, TEXT("%s finished cooking"), *Owner->GetName());
+
+		// Notify listeners
+		OnCookingFinished.Broadcast(Owner);
 	}
 }
 

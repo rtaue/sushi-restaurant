@@ -15,9 +15,12 @@ enum class ECookingState : uint8
 	Cooked      UMETA(DisplayName = "Cooked")       // Fully prepared
 };
 
+// Delegate for when cooking is finished
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCookingFinishedSignature, AActor*, CookedActor);
+
 /**
- * Component that handles the cooking state and timing for ingredients.
- * Can be attached to any actor representing a cookable item.
+ * Component that manages the cooking process of an ingredient.
+ * It tracks its state and handles attachment/detachment to stations.
  */
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SUSHIRESTAURANT_API UCookableComponent : public UActorComponent
@@ -27,8 +30,8 @@ class SUSHIRESTAURANT_API UCookableComponent : public UActorComponent
 public:
 	UCookableComponent();
 
-	/// Starts the cooking process for a specified duration (only on server)
-	void StartCooking(float Duration);
+	/// Starts the cooking process for the given duration and locks the actor to a station
+	void StartCooking(float Duration, AActor* StationActor);
 
 	/// Called when cooking finishes
 	UFUNCTION()
@@ -37,6 +40,10 @@ public:
 	/// Current cooking state (replicated to clients)
 	UPROPERTY(ReplicatedUsing = OnRep_CookingState, BlueprintReadOnly)
 	ECookingState CookingState;
+	
+	// Event fired when cooking completes
+	UPROPERTY(BlueprintAssignable, Category = "Events")
+	FCookingFinishedSignature OnCookingFinished;
 
 protected:
 	/// Registers replicated properties
@@ -49,5 +56,8 @@ protected:
 private:
 	/// Timer handle used for tracking cooking duration
 	FTimerHandle CookingTimer;
-		
+
+	/// The station that is currently holding this item
+	UPROPERTY()
+	AActor* AttachedStation;
 };

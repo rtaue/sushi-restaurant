@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "SushiRestaurant/SushiRestaurant.h"
 
 DEFINE_LOG_CATEGORY(LogTemplateCharacter);
 
@@ -49,6 +50,11 @@ ASushiRestaurantCharacter::ASushiRestaurantCharacter()
 
 	// Note: The skeletal mesh and anim blueprint references on the Mesh component (inherited from Character) 
 	// are set in the derived blueprint asset named ThirdPersonCharacter (to avoid direct content references in C++)
+
+	// Attach point for held items
+	ItemAttachPoint = CreateDefaultSubobject<USceneComponent>(TEXT("ItemAttachPoint"));
+	ItemAttachPoint->SetupAttachment(GetMesh()); // Or RootComponent
+	ItemAttachPoint->SetRelativeLocation(FVector(50.f, 0.f, 50.f));
 }
 
 void ASushiRestaurantCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
@@ -131,4 +137,68 @@ void ASushiRestaurantCharacter::DoJumpEnd()
 {
 	// signal the character to stop jumping
 	StopJumping();
+}
+
+void ASushiRestaurantCharacter::PickupItem(AActor* Item)
+{
+	if (!Item || HeldItem) return;
+
+	HeldItem = Item;
+	Item->AttachToComponent(ItemAttachPoint, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+	Item->SetActorEnableCollision(false);
+	
+	// Disable physics on root component
+	// if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(Item->GetRootComponent()))
+	// {
+	// 	Root->SetSimulatePhysics(false);
+	// }
+	
+	UE_LOG(LogSushiRestaurantCharacter, Log, TEXT("Picked up %s"), *Item->GetName());
+}
+
+void ASushiRestaurantCharacter::DropItem()
+{
+	if (!HeldItem) return;
+
+	HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
+	HeldItem->SetActorEnableCollision(true);
+
+	// Enable physics on root component
+	// if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(HeldItem->GetRootComponent()))
+	// {
+	// 	Root->SetSimulatePhysics(true);
+	// }
+	
+	UE_LOG(LogSushiRestaurantCharacter, Log, TEXT("Dropped %s"), *HeldItem->GetName());
+
+	HeldItem = nullptr;
+}
+
+void ASushiRestaurantCharacter::LockToStation(AActor* Station)
+{
+	if (!Station || LockedStation) return;
+
+	LockedStation = Station;
+	GetCharacterMovement()->DisableMovement();
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		PC->SetIgnoreMoveInput(true);
+		PC->SetIgnoreLookInput(true);
+	}
+}
+
+void ASushiRestaurantCharacter::UnlockFromStation()
+{
+	if (!LockedStation) return;
+
+	GetCharacterMovement()->SetMovementMode(MOVE_Walking);
+
+	if (APlayerController* PC = Cast<APlayerController>(GetController()))
+	{
+		PC->SetIgnoreMoveInput(false);
+		PC->SetIgnoreLookInput(false);
+	}
+
+	LockedStation = nullptr;
 }
