@@ -20,16 +20,12 @@ public class SushiRestaurant : ModuleRules
 			"UMG"
 		});
 
-		PrivateDependencyModuleNames.AddRange(new string[] { });
+		PrivateDependencyModuleNames.AddRange(new string[] {
+			"ImageWriteQueue"
+		});
 
 		PublicIncludePaths.AddRange(new string[] {
-			"SushiRestaurant/Public",
-			"SushiRestaurant/Variant_Platforming",
-			"SushiRestaurant/Variant_Combat",
-			"SushiRestaurant/Variant_Combat/AI",
-			"SushiRestaurant/Variant_SideScrolling",
-			"SushiRestaurant/Variant_SideScrolling/Gameplay",
-			"SushiRestaurant/Variant_SideScrolling/AI"
+			"SushiRestaurant/Public"
 		});
 
         PrivateIncludePaths.AddRange(new string[] {

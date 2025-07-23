@@ -5,9 +5,9 @@
 #include "CoreMinimal.h"
 #include "Gameplay/Recipe/RecipeData.h"
 #include "Interfaces/RecipeSourceInterface.h"
-#include "SushiRestaurant/SushiRestaurant.h"
 #include "ActiveOrder.generated.h"
 
+// Represents the possible status for an order
 UENUM(BlueprintType)
 enum class EOrderStatus : uint8
 {
@@ -17,7 +17,7 @@ enum class EOrderStatus : uint8
     Failed          UMETA(DisplayName = "Failed")
 };
 
-// Represents a single recipe and how many times it is needed or delivered
+// Holds how many times a recipe is required (or delivered)
 USTRUCT(BlueprintType)
 struct SUSHIRESTAURANT_API FRecipeCount
 {
@@ -30,164 +30,118 @@ struct SUSHIRESTAURANT_API FRecipeCount
     int32 Count = 0;
 
     FRecipeCount() {}
-    FRecipeCount(URecipeData* InRecipe, int32 InCount)
+    FRecipeCount(URecipeData* InRecipe, const int32 InCount)
         : Recipe(InRecipe), Count(InCount) {}
+    
+    // Equality operator for use in array comparisons
+    bool operator==(const FRecipeCount& Other) const
+    {
+        return Recipe == Other.Recipe && Count == Other.Count;
+    }
 };
 
-// Holds the current order state: required dishes, delivered dishes, timer, and status
+// Represents an active customer order
 USTRUCT(BlueprintType)
 struct SUSHIRESTAURANT_API FActiveOrder
 {
     GENERATED_BODY()
-    
-    // Number of required dishes by recipe
+
+    // Recipes that need to be delivered
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FRecipeCount> RequiredRecipes;
 
-    // Number of delivered dishes so far
+    // Recipes already delivered
     UPROPERTY(EditAnywhere, BlueprintReadWrite)
     TArray<FRecipeCount> DeliveredRecipes;
 
-    // Remaining time before the order expires
+    // Time allowed to deliver the order (in seconds)
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Order")
-    float TimeRemaining = 0.f;
+    float TotalTime = 60.f;
 
-    // Current status of the order
+    // Timestamp when the order started (used for local progress calculation)
+    UPROPERTY(EditAnywhere, BlueprintReadWrite)
+    float StartTime = 0.f;
+
+    // Current progress state
     UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Order")
     EOrderStatus Status = EOrderStatus::None;
 
-    FActiveOrder(){}
+    FActiveOrder() {}
 
-    // Constructor with multiple recipes and a timer
-    FActiveOrder(const TArray<FRecipeCount>& InRequiredRecipes, const float InTimeRemaining)
-        : RequiredRecipes(InRequiredRecipes), TimeRemaining(InTimeRemaining), Status(EOrderStatus::Pending) {}
+    FActiveOrder(const TArray<FRecipeCount>& InRequiredRecipes, const float InTotalTime, const float InStartTime)
+        : RequiredRecipes(InRequiredRecipes), TotalTime(InTotalTime), StartTime(InStartTime), Status(EOrderStatus::Pending)
+    {
+    }
 
-    // Checks whether all required dishes have been delivered
+    // Clears the order to default state
+    void Clear()
+    {
+        RequiredRecipes.Empty();
+        DeliveredRecipes.Empty();
+        TotalTime = 0.f;
+        StartTime = 0.f;
+        Status = EOrderStatus::None;
+    }
+
+    // Checks if the order is fully delivered
     bool IsComplete() const
     {
         for (const FRecipeCount& Req : RequiredRecipes)
         {
-            if (const int32 Delivered = GetDeliveredCountFor(Req.Recipe); Delivered < Req.Count)
+            if (GetDeliveredCountFor(Req.Recipe) < Req.Count)
             {
-                UE_LOG(LogOrderSystem, Verbose, TEXT("Recipe %s not complete: %d/%d"),
-                    *GetNameSafe(Req.Recipe), Delivered, Req.Count);
-
-                GEngine->AddOnScreenDebugMessage(-1, 4.f, FColor::Yellow,
-                    FString::Printf(TEXT("Missing %s: %d/%d"),
-                    *GetNameSafe(Req.Recipe), Delivered, Req.Count));
-                
                 return false;
             }
         }
 
-        UE_LOG(LogOrderSystem, Log, TEXT("Order is complete"));
-        GEngine->AddOnScreenDebugMessage(-1, 5.f, FColor::Green, TEXT("Order Completed!"));
-        
         return true;
     }
 
-    // Attempts to deliver a dish to this order
+    // Attempts to deliver a dish
     bool TryDeliverDish(const AActor* Dish)
     {
-        if (!Dish || Status != EOrderStatus::Pending)
-        {
-            UE_LOG(LogOrderSystem, Warning, TEXT("TryDeliverDish failed: invalid dish or order not pending"));
-            GEngine->AddOnScreenDebugMessage(-1, 4.f, FColor::Red, TEXT("Can't deliver now."));
-            
-            return false;
-        }
-        
+        if (!Dish || Status != EOrderStatus::Pending) return false;
+
         URecipeData* Recipe = nullptr;
+
+        // Check if the actor has a recipe
         if (Dish->GetClass()->ImplementsInterface(URecipeSourceInterface::StaticClass()))
         {
             Recipe = IRecipeSourceInterface::Execute_GetRecipe(Dish);
         }
 
-        if (!Recipe)
-        {
-            UE_LOG(LogOrderSystem, Warning, TEXT("Dish does not implement IRecipeSourceInterface or returned null"));
-
-            if (GEngine)
-            {
-                GEngine->AddOnScreenDebugMessage(-1, 4.f, FColor::Red, TEXT("Invalid dish: no recipe found"));
-            }
-            
-            return false;
-        }
+        if (!Recipe) return false;
 
         const int32 RequiredCount = GetRequiredCountFor(Recipe);
-        if (RequiredCount == 0)
-        {
-            UE_LOG(LogOrderSystem, Warning, TEXT("Recipe %s is not required in this order"), *GetNameSafe(Recipe));
+        if (RequiredCount == 0) return false;
 
-            if (GEngine)
-            {
-                GEngine->AddOnScreenDebugMessage(-1, 4.f, FColor::Red,
-                    FString::Printf(TEXT("Recipe %s not required"), *GetNameSafe(Recipe)));
-            }
-            
-            return false;
-        }
+        if (const int32 Delivered = GetDeliveredCountFor(Recipe); Delivered >= RequiredCount) return false;
 
-        const int32 Delivered = GetDeliveredCountFor(Recipe);
-        if (Delivered >= RequiredCount)
-        {
-            UE_LOG(LogOrderSystem, Warning, TEXT("All of recipe %s already delivered: %d/%d"),
-                *GetNameSafe(Recipe), Delivered, RequiredCount);
-
-            if (GEngine)
-            {
-                GEngine->AddOnScreenDebugMessage(-1, 4.f, FColor::Red,
-                    FString::Printf(TEXT("All of %s already delivered"), *GetNameSafe(Recipe)));
-            }
-
-            
-            return false;
-        }
-        
         IncrementDelivered(Recipe);
-        
-        UE_LOG(LogOrderSystem, Log, TEXT("Delivered recipe %s (%d/%d)"),
-            *GetNameSafe(Recipe), Delivered + 1, RequiredCount);
-
-        if (GEngine)
-        {
-            GEngine->AddOnScreenDebugMessage(-1, 4.f, FColor::Cyan,
-                FString::Printf(TEXT("Delivered %s (%d/%d)"), *GetNameSafe(Recipe), Delivered + 1, RequiredCount));
-        }
-        
         return true;
     }
 
-private:
-
-    // Gets how many of the given recipe are required in total
+    // How many of a recipe are required
     int32 GetRequiredCountFor(const URecipeData* Recipe) const
     {
         for (const FRecipeCount& Entry : RequiredRecipes)
         {
-            if (Entry.Recipe == Recipe)
-            {
-                return Entry.Count;
-            }
+            if (Entry.Recipe == Recipe) return Entry.Count;
         }
         return 0;
     }
 
-    // Gets how many of the given recipe have been delivered
+    // How many have already been delivered
     int32 GetDeliveredCountFor(const URecipeData* Recipe) const
     {
         for (const FRecipeCount& Entry : DeliveredRecipes)
         {
-            if (Entry.Recipe == Recipe)
-            {
-                return Entry.Count;
-            }
+            if (Entry.Recipe == Recipe) return Entry.Count;
         }
         return 0;
     }
 
-    // Increments the delivered count for a recipe
+    // Increments delivered dishes count of a certain recipe
     void IncrementDelivered(URecipeData* Recipe)
     {
         for (FRecipeCount& Entry : DeliveredRecipes)
@@ -199,18 +153,57 @@ private:
             }
         }
 
-        // If not found, add new
         DeliveredRecipes.Add(FRecipeCount(Recipe, 1));
     }
 
-    // Display name helper
-    FText GetDisplayName() const
+    // Calculate the time remaining (requires GetWorld()->GetTimeSeconds())
+    float GetTimeRemaining(const float CurrentWorldTime) const
     {
-        if (RequiredRecipes.Num() == 1)
+        return FMath::Max(0.f, (StartTime + TotalTime) - CurrentWorldTime);
+    }
+
+    // Compares only the structure/identity of the order (not deliveries)
+    bool IsNewComparedTo(const FActiveOrder& Other) const
+    {
+        if (Status != EOrderStatus::Pending || Other.Status != EOrderStatus::Pending)
         {
-            return RequiredRecipes[0].Recipe->DishName;
+            return true;
         }
 
-        return FText::FromString("Combo Order");
+        if (!FMath::IsNearlyEqual(TotalTime, Other.TotalTime) ||
+            !FMath::IsNearlyEqual(StartTime, Other.StartTime))
+        {
+            return true;
+        }
+
+        if (RequiredRecipes.Num() != Other.RequiredRecipes.Num())
+        {
+            return true;
+        }
+
+        for (int32 i = 0; i < RequiredRecipes.Num(); ++i)
+        {
+            if (RequiredRecipes[i] != Other.RequiredRecipes[i])
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // Compares two orders to determine if they are the same in structure and progress
+    bool operator==(const FActiveOrder& Other) const
+    {
+        return Status == Other.Status &&
+               FMath::IsNearlyEqual(TotalTime, Other.TotalTime) &&
+               FMath::IsNearlyEqual(StartTime, Other.StartTime) &&
+               RequiredRecipes == Other.RequiredRecipes &&
+               DeliveredRecipes == Other.DeliveredRecipes;
+    }
+
+    bool operator!=(const FActiveOrder& Other) const
+    {
+        return !(*this == Other);
     }
 };

@@ -31,5 +31,7 @@ public:
 	// Optional: Expected preparation steps (for validation or UI)
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Recipe")
 	TArray<FName> RequiredProcesses;
-	
+
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Recipe")
+	UTexture2D* Icon;
 };

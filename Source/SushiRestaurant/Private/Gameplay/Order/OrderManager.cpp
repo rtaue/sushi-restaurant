@@ -82,7 +82,7 @@ void AOrderManager::AssignOrdersToStations()
 				UE_LOG(LogOrderManager, Log, TEXT(" -> %s x%d"), *GetNameSafe(Pair.Key), Pair.Value);
 			}
 
-			const FActiveOrder NewOrder(RequiredRecipes, 60.f);
+			const FActiveOrder NewOrder(RequiredRecipes, 60.f, GetWorld()->GetTimeSeconds());
 			Station->AssignOrder(NewOrder);
 			break;
 		}
