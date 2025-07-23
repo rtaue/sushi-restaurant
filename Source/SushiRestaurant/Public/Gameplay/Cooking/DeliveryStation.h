@@ -67,7 +67,7 @@ public:
 protected:
 
 	/** Inits order widget component */
-	void InitWidget();
+	void InitOrderWidget();
 
 	/** Updates the order countdown and triggers failure if time expires */
 	void UpdateOrderTimer();
@@ -76,7 +76,7 @@ protected:
 	void UpdateWidgetVisibility() const;
 
 	/** Makes the widget rotate to face the player's camera */
-	void UpdateWidgetFacing() const;
+	void UpdateWidgetFacing();
 
 	/** Updates the widget's data (only when ActiveOrder is valid) */
 	void UpdateOrderWidget() const;
@@ -92,7 +92,7 @@ public:
 	TSubclassOf<UOrderWidget> OrderWidgetClass;
 
 	/** Order widget reference */
-	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	UPROPERTY()
 	UOrderWidget* OrderWidget;
 
 	/** The currently active order for this delivery station */

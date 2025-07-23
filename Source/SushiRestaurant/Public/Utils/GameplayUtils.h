@@ -16,7 +16,11 @@ class SUSHIRESTAURANT_API UGameplayUtils : public UObject
 
 public:
 
-	// Returns true if the local player controller is valid and locally controlled
+	//** Returns true if the local player controller is valid and locally controlled */
 	UFUNCTION(BlueprintPure, Category = "Gameplay|Utils")
 	static bool IsLocallyControlled(const UWorld* World);
+	
+	/** Rotates the widget to face the local player’s camera */
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	static void UpdateWidgetFacing(USceneComponent* TargetWidget, UObject* WorldContext);
 };

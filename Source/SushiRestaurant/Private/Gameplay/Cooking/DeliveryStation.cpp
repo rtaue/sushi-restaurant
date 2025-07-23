@@ -30,7 +30,7 @@ void ADeliveryStation::BeginPlay()
 {
 	Super::BeginPlay();
 
-	InitWidget();
+	InitOrderWidget();
 	
 	UpdateWidgetVisibility();
 }
@@ -221,7 +221,7 @@ void ADeliveryStation::ClearOrderWithDelay()
     GetWorld()->GetTimerManager().SetTimer(ClearOrderHandle, this, &ADeliveryStation::ClearOrder, 3.f, false);
 }
 
-void ADeliveryStation::InitWidget()
+void ADeliveryStation::InitOrderWidget()
 {
 	if (OrderWidgetComponent && OrderWidgetClass)
 	{
@@ -272,26 +272,14 @@ void ADeliveryStation::UpdateWidgetVisibility() const
 		bShouldBeVisible ? TEXT("VISIBLE") : TEXT("HIDDEN"));
 }
 
-void ADeliveryStation::UpdateWidgetFacing() const
+void ADeliveryStation::UpdateWidgetFacing()
 {
 	// Skip on dedicated server or non-local clients
 	if (!IsNetMode(NM_DedicatedServer) && UGameplayUtils::IsLocallyControlled(GetWorld()))
 	{
 		if (OrderWidgetComponent)
 		{
-			// Get the local camera position
-			if (const APlayerCameraManager* CamManager = UGameplayStatics::GetPlayerCameraManager(this, 0))
-			{
-				const FVector CamLoc = CamManager->GetCameraLocation();
-				const FVector WidgetLoc = OrderWidgetComponent->GetComponentLocation();
-
-				// Compute a rotation that faces the camera
-				FRotator LookAtRotation = (CamLoc - WidgetLoc).Rotation();
-				LookAtRotation.Pitch = 0.f;
-				LookAtRotation.Roll = 0.f;
-
-				OrderWidgetComponent->SetWorldRotation(LookAtRotation);
-			}
+			UGameplayUtils::UpdateWidgetFacing(OrderWidgetComponent, this);
 		}
 	}
 }

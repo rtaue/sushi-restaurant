@@ -19,52 +19,76 @@ enum class ECookingState : uint8
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCookingFinishedSignature, AActor*, CookedActor);
 
 /**
- * Component that manages the cooking process of an ingredient.
- * It tracks its state and handles attachment/detachment to stations.
+ * Component responsible for managing cooking lifecycle and time tracking.
+ * Encapsulates logic for starting, updating, and completing the cooking process.
  */
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class SUSHIRESTAURANT_API UCookableComponent : public UActorComponent
 {
 	GENERATED_BODY()
-
+	
 public:
+	
 	UCookableComponent();
 
-	/// Starts the cooking process for the given duration and locks the actor to a station
-	void StartCooking(float Duration, AActor* StationActor);
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	/// Called when cooking finishes
-	UFUNCTION()
-	void OnCookingComplete();
+	/** Starts the cooking process */
+	void StartCooking(float Duration, AActor* InStation);
 
-	/// Current cooking state (replicated to clients)
-	UPROPERTY(ReplicatedUsing = OnRep_CookingState, BlueprintReadOnly)
-	ECookingState CookingState;
-	
-	// Event fired when cooking completes
+	/** Returns true if currently cooking */
+	UFUNCTION(BlueprintCallable, Category = "Cooking")
+	bool IsCooking() const { return CookingState == ECookingState::Processing; }
+
+	/** Returns true if finished cooking */
+	UFUNCTION(BlueprintCallable, Category = "Cooking")
+	bool IsCooked() const { return CookingState == ECookingState::Cooked; }
+
+	/** Returns time elapsed since start (for UI/local use) */
+	UFUNCTION(BlueprintCallable, Category = "Cooking")
+	float GetElapsedTime(const UObject* WorldContext) const;
+
+	/** Returns time remaining until done (for UI/local use) */
+	UFUNCTION(BlueprintCallable, Category = "Cooking")
+	float GetRemainingTime(const UObject* WorldContext) const;
+
+	/** Called when cooking completes */
 	UPROPERTY(BlueprintAssignable, Category = "Events")
 	FCookingFinishedSignature OnCookingFinished;
 
-	// Result actor when prepared
+	/** Result actor that will replace the cooked one */
 	UPROPERTY(EditDefaultsOnly, Category = "Cooking")
 	TSubclassOf<AActor> ResultActorClass;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Cooking")
-	FName ProcessName; // "Chopped", "Boiled", etc.
+	FName ProcessName;
+
+	/** Current state replicated */
+	UPROPERTY(ReplicatedUsing = OnRep_CookingState, BlueprintReadOnly)
+	ECookingState CookingState;
 
 protected:
-	/// Registers replicated properties
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	/// Called on clients when CookingState changes
 	UFUNCTION()
-	void OnRep_CookingState();
+	void OnRep_CookingState() const;
 
 private:
-	/// Timer handle used for tracking cooking duration
+
+	/** Time when cooking started (only relevant during Processing) */
+	UPROPERTY()
+	float CookingStartTime = 0.f;
+
+	/** Duration for the cooking process */
+	UPROPERTY()
+	float CookingDuration = 0.f;
+
+	/** Timer handle used by the server */
 	FTimerHandle CookingTimer;
 
-	/// The station that is currently holding this item
+	/** Station to which the item is attached (for reference) */
 	UPROPERTY()
 	AActor* AttachedStation;
+
+	/** Called on server when cooking finishes */
+	void OnCookingComplete();
 };
