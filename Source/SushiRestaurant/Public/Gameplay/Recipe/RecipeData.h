@@ -34,4 +34,8 @@ public:
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Recipe")
 	UTexture2D* Icon;
+
+	/** Base score for delivering this dish */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Scoring")
+	int32 BaseScore = 100;
 };

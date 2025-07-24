@@ -6,10 +6,6 @@
 // Sets default values
 ADish::ADish()
 {
-	PrimaryActorTick.bCanEverTick = false;
-	bReplicates = true;
 
-	DishMeshComponent = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("DishMesh"));
-	RootComponent = DishMeshComponent;
 }
 

@@ -11,11 +11,24 @@ void ADispenserStation::Interact_Implementation(AActor* Interactor)
 	{
 		if (!Character->IsHoldingItem() && IngredientToSpawn)
 		{
-			FVector SpawnLocation = Character->GetActorLocation() + FVector(0, 0, 50);
-			FActorSpawnParameters Params;
+			const FVector SpawnLocation = Character->GetActorLocation() + FVector(0, 0, 50);
+			
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = this;
+			SpawnParams.Instigator = GetInstigator();
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-			AActor* NewIngredient = GetWorld()->SpawnActor<AActor>(IngredientToSpawn, SpawnLocation, FRotator::ZeroRotator, Params);
-			Character->PickupItem(NewIngredient);
+			AActor* NewIngredient = GetWorld()->SpawnActor<AActor>(IngredientToSpawn, SpawnLocation, FRotator::ZeroRotator, SpawnParams);
+			// Character->PickupItem(NewIngredient);
+			// Temp fix for client replication race
+			FTimerHandle DelayHandle;
+			GetWorldTimerManager().SetTimer(DelayHandle, FTimerDelegate::CreateLambda([=]()
+			{
+				if (IsValid(Character) && IsValid(NewIngredient))
+				{
+					Character->PickupItem(NewIngredient);
+				}
+			}), 0.1f, false);
 		}
 	}
 }

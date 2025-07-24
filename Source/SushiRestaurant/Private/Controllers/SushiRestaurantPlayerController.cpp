@@ -7,8 +7,21 @@
 #include "EnhancedInputSubsystems.h"
 #include "Engine/LocalPlayer.h"
 #include "InputMappingContext.h"
+#include "Blueprint/UserWidget.h"
+#include "Game/SushiRestaurantGameState.h"
 #include "Interfaces/InteractableInterface.h"
 #include "SushiRestaurant/SushiRestaurant.h"
+#include "Widgets/Score/ScoreWidget.h"
+
+void ASushiRestaurantPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+
+	CreateGameplayWidgets();
+
+	SetInputMode(FInputModeGameOnly());
+	bShowMouseCursor = false;
+}
 
 void ASushiRestaurantPlayerController::SetupInputComponent()
 {
@@ -99,4 +112,34 @@ void ASushiRestaurantPlayerController::Server_OnInteract_Implementation()
 	}
 	
 	PerformInteractionTrace();
+}
+
+void ASushiRestaurantPlayerController::HandleScoreUpdated(const float NewScore)
+{
+	if (ScoreWidget)
+	{
+		ScoreWidget->UpdateScore(NewScore);
+	}
+}
+
+void ASushiRestaurantPlayerController::CreateGameplayWidgets()
+{
+	// Spawn and add the score widget
+	if (ScoreWidgetClass)
+	{
+		ScoreWidget = CreateWidget<UScoreWidget>(GetWorld(), ScoreWidgetClass);
+		if (ScoreWidget)
+		{
+			ScoreWidget->AddToViewport();
+
+			// Bind to score changes from GameState
+			if (ASushiRestaurantGameState* SushiGS = GetWorld()->GetGameState<ASushiRestaurantGameState>())
+			{
+				SushiGS->OnScoreChanged.AddDynamic(this, &ASushiRestaurantPlayerController::HandleScoreUpdated);
+
+				// Initialize widget with current score
+				ScoreWidget->UpdateScore(SushiGS->GetCurrentScore());
+			}
+		}
+	}
 }

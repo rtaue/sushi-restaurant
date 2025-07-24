@@ -11,3 +11,5 @@ DECLARE_LOG_CATEGORY_EXTERN(LogDeliveryStation, Log, All);
 DECLARE_LOG_CATEGORY_EXTERN(LogSushiRestaurantCharacter, Log, All);
 DECLARE_LOG_CATEGORY_EXTERN(LogOrderManager, Log, All);
 DECLARE_LOG_CATEGORY_EXTERN(LogOrderSystem, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSushiRestaurantGameState, Log, All);
+DECLARE_LOG_CATEGORY_EXTERN(LogSushiRestaurantGameInstance, Log, All);

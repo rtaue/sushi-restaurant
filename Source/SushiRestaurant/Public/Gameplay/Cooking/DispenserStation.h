@@ -15,6 +15,7 @@ class SUSHIRESTAURANT_API ADispenserStation : public AStationBase
 	GENERATED_BODY()
 
 public:
+	
 	virtual void Interact_Implementation(AActor* Interactor) override;
 
 protected:

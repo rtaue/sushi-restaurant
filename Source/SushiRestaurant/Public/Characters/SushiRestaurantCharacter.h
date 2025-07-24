@@ -98,8 +98,11 @@ public:
 #pragma region Cooking
 
 	// The currently held item (if any)
-	UPROPERTY(Replicated, BlueprintReadOnly, Category = "Inventory")
+	UPROPERTY(ReplicatedUsing = OnRep_HeldItem, BlueprintReadOnly, Category = "Inventory")
 	AActor* HeldItem;
+
+	UFUNCTION()
+	void OnRep_HeldItem();
 
 	// Location to attach the item visually
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly)
@@ -121,5 +124,12 @@ public:
 	bool IsLocked() const { return LockedStation != nullptr; }
 
 #pragma endregion
+
+public:
+	/** Plays a given interaction montage */
+	void PlayInteractionMontage(UAnimMontage* Montage);
+
+	/** Stops interaction montage */
+	void StopInteractionMontage();
 };
 

@@ -29,7 +29,7 @@ class SUSHIRESTAURANT_API ACookwareStation : public AStationBase
 
 public:
 	ACookwareStation();
-
+	
 	virtual void BeginPlay() override;
 	virtual void Tick(float DeltaTime) override;
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
@@ -51,6 +51,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Cooking")
 	USceneComponent* IngredientAnchor;
 
+	/** Montage to be played by the interacting character */
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UAnimMontage* InteractionMontage;
+
 	/** Widget component to show cooking progress */
 	UPROPERTY(VisibleAnywhere, Category = "UI")
 	UWidgetComponent* CookingProgressWidgetComponent;
@@ -64,12 +68,15 @@ protected:
 	UCookingProgressWidget* CookingProgressWidget;
 
 	/** Current ingredient being cooked */
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	AActor* CurrentHeldItem;
 
 	/** Player currently using the station */
-	UPROPERTY(Replicated)
+	UPROPERTY(ReplicatedUsing = OnRep_CurrentUser)
 	ASushiRestaurantCharacter* CurrentUser;
+	
+	UFUNCTION()
+	void OnRep_CurrentUser();
 
 private:
 
@@ -79,8 +86,11 @@ private:
 	/** Update progress bar visibility & facing */
 	void UpdateProgressWidget();
 
+	void SafeAssignCookingWidget();
+
 	/** Handle when cooking is complete */
 	UFUNCTION()
 	void OnIngredientCooked(AActor* CookedActor);
+	
 };
 

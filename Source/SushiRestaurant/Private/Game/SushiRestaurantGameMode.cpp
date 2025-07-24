@@ -5,6 +5,7 @@
 #include "Characters/SushiRestaurantCharacter.h"
 #include "Controllers/SushiRestaurantPlayerController.h"
 #include "Game/SushiRestaurantGameState.h"
+#include "Game/SushiRestaurantHUD.h"
 #include "Game/SushiRestaurantPlayerState.h"
 
 ASushiRestaurantGameMode::ASushiRestaurantGameMode()
@@ -13,4 +14,5 @@ ASushiRestaurantGameMode::ASushiRestaurantGameMode()
 	GameStateClass = ASushiRestaurantGameState::StaticClass();
 	PlayerStateClass = ASushiRestaurantPlayerState::StaticClass();
 	DefaultPawnClass = ASushiRestaurantCharacter::StaticClass();
+	HUDClass = ASushiRestaurantHUD::StaticClass();
 }

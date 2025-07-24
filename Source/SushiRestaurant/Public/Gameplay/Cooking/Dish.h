@@ -3,29 +3,19 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "RecipeItem.h"
 #include "GameFramework/Actor.h"
-#include "Interfaces/RecipeSourceInterface.h"
 #include "Dish.generated.h"
 
 class URecipeData;
 
 UCLASS()
-class SUSHIRESTAURANT_API ADish : public AActor, public IRecipeSourceInterface
+class SUSHIRESTAURANT_API ADish : public ARecipeItem
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
 	ADish();
-	
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	URecipeData* Recipe;
-
-	virtual URecipeData* GetRecipe_Implementation() const override { return Recipe; };
-
-protected:
-	
-	UPROPERTY(VisibleAnywhere)
-	UStaticMeshComponent* DishMeshComponent;
 	
 };

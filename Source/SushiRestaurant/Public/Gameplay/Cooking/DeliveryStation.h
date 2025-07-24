@@ -8,6 +8,7 @@
 #include "Widgets/Orders/OrderWidget.h"
 #include "DeliveryStation.generated.h"
 
+class ASushiRestaurantGameState;
 class UWidgetComponent;
 struct FActiveOrder;
 
@@ -114,5 +115,8 @@ private:
 
 	// Cached snapshot to compare replication updates
 	FActiveOrder LastOrderSnapshot;
+
+	UPROPERTY()
+	ASushiRestaurantGameState* SushiGS;
 };
 

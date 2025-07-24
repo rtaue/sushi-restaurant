@@ -53,7 +53,8 @@ void ACookwareStation::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& Out
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ThisClass, CurrentUser);
+	DOREPLIFETIME(ThisClass, CurrentHeldItem);
+	DOREPLIFETIME_CONDITION_NOTIFY(ThisClass, CurrentUser, COND_None, REPNOTIFY_Always);
 }
 
 void ACookwareStation::Interact_Implementation(AActor* Interactor)
@@ -80,17 +81,15 @@ void ACookwareStation::Interact_Implementation(AActor* Interactor)
 			{
 				Character->DropItem();
 
-				if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(Item->GetRootComponent()))
-				{
-					Root->SetSimulatePhysics(false);
-					Item->SetActorEnableCollision(false);
-				}
-
-				Item->AttachToComponent(IngredientAnchor, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+				Item->AttachToComponent(IngredientAnchor, FAttachmentTransformRules::SnapToTargetIncludingScale);
+				Item->SetActorRelativeLocation(FVector::ZeroVector);
+				Item->SetActorRelativeRotation(FRotator::ZeroRotator);
+				
 				CurrentHeldItem = Item;
 				CurrentUser = Character;
 
 				Character->LockToStation(this);
+				Character->PlayInteractionMontage(InteractionMontage);
 
 				Cookable->OnCookingFinished.AddDynamic(this, &ACookwareStation::OnIngredientCooked);
 				Cookable->StartCooking(CookingTime, this);
@@ -117,9 +116,16 @@ void ACookwareStation::OnIngredientCooked(AActor* CookedActor)
 
 			CookedActor->Destroy();
 
-			if (AActor* Result = GetWorld()->SpawnActor<AActor>(Cookable->ResultActorClass, Loc, Rot))
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = this;
+			SpawnParams.Instigator = GetInstigator();
+			SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+			if (AActor* Result = GetWorld()->SpawnActor<AActor>(Cookable->ResultActorClass, Loc, Rot, SpawnParams))
 			{
-				Result->AttachToComponent(IngredientAnchor, FAttachmentTransformRules::SnapToTargetNotIncludingScale);
+				Result->AttachToComponent(IngredientAnchor, FAttachmentTransformRules::SnapToTargetIncludingScale);
+				Result->SetActorRelativeLocation(FVector::ZeroVector);
+				Result->SetActorRelativeRotation(FRotator::ZeroRotator);
 				CurrentHeldItem = Result;
 			}
 		}
@@ -127,11 +133,24 @@ void ACookwareStation::OnIngredientCooked(AActor* CookedActor)
 
 	if (CurrentUser)
 	{
+		CurrentUser->StopInteractionMontage();
 		CurrentUser->UnlockFromStation();
 		CurrentUser = nullptr;
 	}
 
 	UE_LOG(LogCookwareStation, Log, TEXT("Finished cooking at station %s"), *GetName());
+}
+
+void ACookwareStation::OnRep_CurrentUser()
+{
+	if (CurrentUser && CurrentUser->IsLocallyControlled())
+	{
+		UpdateProgressWidget();
+	}
+	else
+	{
+		CookingProgressWidgetComponent->SetHiddenInGame(true);
+	}
 }
 
 void ACookwareStation::InitProgressBarWidget()
@@ -142,6 +161,16 @@ void ACookwareStation::InitProgressBarWidget()
 		CookingProgressWidgetComponent->InitWidget();
 
 		CookingProgressWidget = Cast<UCookingProgressWidget>(CookingProgressWidgetComponent->GetUserWidgetObject());
+		if (CookingProgressWidget)
+		{
+			UpdateProgressWidget();
+		}
+		else
+		{
+			// Schedule delayed grab of CookingProgressWidget
+			FTimerHandle TimerHandle;
+			GetWorldTimerManager().SetTimer(TimerHandle, this, &ACookwareStation::SafeAssignCookingWidget, 0.1f, false);
+		}
 	}
 }
 
@@ -172,5 +201,22 @@ void ACookwareStation::UpdateProgressWidget()
 	if (bShouldShow)
 	{
 		UGameplayUtils::UpdateWidgetFacing(CookingProgressWidgetComponent, this);
+	}
+}
+
+void ACookwareStation::SafeAssignCookingWidget()
+{
+	if (!CookingProgressWidget && CookingProgressWidgetComponent)
+	{
+		CookingProgressWidget = Cast<UCookingProgressWidget>(CookingProgressWidgetComponent->GetUserWidgetObject());
+
+		if (CookingProgressWidget)
+		{
+			UE_LOG(LogCookwareStation, Warning, TEXT("CookingProgressWidget successfully assigned (delayed) on %s"), *GetName());
+		}
+		else
+		{
+			UE_LOG(LogCookwareStation, Error, TEXT("CookingProgressWidget is STILL null after delay on %s"), *GetName());
+		}
 	}
 }

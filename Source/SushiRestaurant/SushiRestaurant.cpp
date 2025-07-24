@@ -12,4 +12,6 @@ DEFINE_LOG_CATEGORY(LogDeliveryStation);
 DEFINE_LOG_CATEGORY(LogSushiRestaurantCharacter);
 DEFINE_LOG_CATEGORY(LogOrderManager);
 DEFINE_LOG_CATEGORY(LogOrderSystem);
+DEFINE_LOG_CATEGORY(LogSushiRestaurantGameState);
+DEFINE_LOG_CATEGORY(LogSushiRestaurantGameInstance);
  

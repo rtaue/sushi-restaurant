@@ -10,6 +10,7 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "InputActionValue.h"
+#include "Interfaces/HoldableInterface.h"
 #include "Net/UnrealNetwork.h"
 #include "SushiRestaurant/SushiRestaurant.h"
 
@@ -147,20 +148,46 @@ void ASushiRestaurantCharacter::DoJumpEnd()
 	StopJumping();
 }
 
+void ASushiRestaurantCharacter::OnRep_HeldItem()
+{
+	if (HeldItem && HeldItem->Implements<UHoldableInterface>())
+	{
+		// Client-side execution of pickup logic
+		IHoldableInterface::Execute_OnPickedUp(HeldItem);
+
+		// Attach on the client
+		HeldItem->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, "ItemSocket");
+
+		// Force scale fix for client-side attach
+		HeldItem->SetActorScale3D(FVector(1.0f));
+
+		// Disable movement replication while held (safe to repeat)
+		HeldItem->SetReplicateMovement(false);
+	}
+}
+
 void ASushiRestaurantCharacter::PickupItem(AActor* Item)
 {
 	if (!Item || HeldItem) return;
 
-	HeldItem = Item;
-
-	// Attach to character socket
-	Item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetNotIncludingScale, "ItemSocket");
-	
-	// Disable physics and collision
-	if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(Item->GetRootComponent()))
+	if (Item && Item->Implements<UHoldableInterface>())
 	{
-		Root->SetSimulatePhysics(false);
-		Root->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		// Store the item
+		HeldItem = Item;
+
+		// Execute OnPickedUp behavior (e.g. disable physics)
+		IHoldableInterface::Execute_OnPickedUp(Item);
+
+		// Attach the item to the character's socket, preserving socket scale
+		Item->AttachToComponent(GetMesh(), FAttachmentTransformRules::SnapToTargetIncludingScale, "ItemSocket");
+
+		// Force scale in case of inconsistent replication
+		Item->SetActorScale3D(FVector(1.0f));
+
+		// Optional: disable movement replication while held
+		Item->SetReplicateMovement(false);
+
+		UE_LOG(LogTemp, Log, TEXT("Item picked up on server: %s"), *Item->GetName());
 	}
 
 	UE_LOG(LogSushiRestaurantCharacter, Log, TEXT("Picked up item: %s"), *Item->GetName());
@@ -170,17 +197,20 @@ void ASushiRestaurantCharacter::DropItem()
 {
 	if (!HeldItem) return;
 
-	HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
-
-	if (UPrimitiveComponent* Root = Cast<UPrimitiveComponent>(HeldItem->GetRootComponent()))
+	if (HeldItem && HeldItem->Implements<UHoldableInterface>())
 	{
-		Root->SetSimulatePhysics(true);
-		Root->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
-	}
-	
-	UE_LOG(LogSushiRestaurantCharacter, Log, TEXT("Dropped %s"), *HeldItem->GetName());
+		// Detach from character
+		HeldItem->DetachFromActor(FDetachmentTransformRules::KeepWorldTransform);
 
-	HeldItem = nullptr;
+		// Enable movement replication again
+		HeldItem->SetReplicateMovement(true);
+		
+		IHoldableInterface::Execute_OnDropped(HeldItem);
+
+		UE_LOG(LogSushiRestaurantCharacter, Log, TEXT("Dropped %s"), *HeldItem->GetName());
+		
+		HeldItem = nullptr;
+	}
 }
 
 void ASushiRestaurantCharacter::LockToStation(AActor* Station)
@@ -211,3 +241,22 @@ void ASushiRestaurantCharacter::UnlockFromStation()
 
 	LockedStation = nullptr;
 }
+
+void ASushiRestaurantCharacter::PlayInteractionMontage(UAnimMontage* Montage)
+{
+	if (!Montage) return;
+
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		AnimInstance->Montage_Play(Montage);
+	}
+}
+
+void ASushiRestaurantCharacter::StopInteractionMontage()
+{
+	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
+	{
+		AnimInstance->Montage_Stop(0.2f);
+	}
+}
+

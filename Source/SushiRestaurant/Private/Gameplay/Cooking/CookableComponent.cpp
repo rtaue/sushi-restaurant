@@ -20,6 +20,8 @@ void UCookableComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& O
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(ThisClass, CookingState);
+	DOREPLIFETIME(ThisClass, CookingDuration);
+	DOREPLIFETIME_CONDITION_NOTIFY(ThisClass, CookingStartTime, COND_None, REPNOTIFY_Always);
 }
 
 void UCookableComponent::StartCooking(const float Duration, AActor* InStation)
@@ -84,6 +86,14 @@ void UCookableComponent::OnRep_CookingState() const
 		TEXT("%s replicated new state: %s"),
 		*GetOwner()->GetName(),
 		*UEnum::GetValueAsString(CookingState));
+}
+
+void UCookableComponent::OnRep_CookingStartTime() const
+{
+	UE_LOG(LogCookableComponent, Log,
+		TEXT("%s client received CookingStartTime: %.2f"),
+		*GetOwner()->GetName(),
+		CookingStartTime);
 }
 
 void UCookableComponent::OnCookingComplete()

@@ -5,7 +5,7 @@
 
 #include "Characters/SushiRestaurantCharacter.h"
 #include "Components/WidgetComponent.h"
-#include "Kismet/GameplayStatics.h"
+#include "Game/SushiRestaurantGameState.h"
 #include "Net/UnrealNetwork.h"
 #include "SushiRestaurant/SushiRestaurant.h"
 #include "Utils/GameplayUtils.h"
@@ -29,6 +29,11 @@ ADeliveryStation::ADeliveryStation()
 void ADeliveryStation::BeginPlay()
 {
 	Super::BeginPlay();
+
+	if (const UWorld* World = GetWorld())
+	{
+		SushiGS = World->GetGameState<ASushiRestaurantGameState>();
+	}
 
 	InitOrderWidget();
 	
@@ -115,7 +120,6 @@ void ADeliveryStation::AssignOrder(const FActiveOrder& NewOrder)
 void ADeliveryStation::OnRep_ActiveOrder()
 {
 	// Determine if the order is structurally new or just an update
-
 	if (const bool bIsNewOrder = ActiveOrder.IsNewComparedTo(LastOrderSnapshot))
 	{
 		// New order assigned, rebuild full widget
@@ -164,6 +168,14 @@ bool ADeliveryStation::SubmitDish(AActor* DeliveredDish)
 		{
 			OrderWidget->RefreshDeliveryCounts(ActiveOrder);
 		}
+
+		if (SushiGS)
+		{
+			if (const URecipeData* Recipe = IRecipeSourceInterface::Execute_GetRecipe(DeliveredDish))
+			{
+				SushiGS->HandleRecipeDelivered(Recipe, ActiveOrder.GetTimeRemaining(GetWorld()->GetTimeSeconds()), ActiveOrder.TotalTime);
+			}
+		}
 		
 		if (ActiveOrder.IsComplete())
 		{
@@ -171,6 +183,11 @@ bool ADeliveryStation::SubmitDish(AActor* DeliveredDish)
 			FString::Printf(TEXT("Order completed at %s!"), *GetName()));
 			
 			UE_LOG(LogDeliveryStation, Log, TEXT("Order completed at station %s!"), *GetName());
+
+			if (SushiGS)
+			{
+				SushiGS->HandleOrderCompleted(ActiveOrder);
+			}
 			
 			OnOrderDelivered.Broadcast(true);
 
@@ -240,6 +257,11 @@ void ADeliveryStation::UpdateOrderTimer()
 		if (const float TimeRemaining = ActiveOrder.GetTimeRemaining(GetWorld()->GetTimeSeconds()); TimeRemaining <= 0.f)
 		{
 			ActiveOrder.Status = EOrderStatus::Failed;
+
+			if (SushiGS)
+			{
+				SushiGS->HandleOrderFailed(ActiveOrder);
+			}
 
 			UpdateWidgetVisibility();
 			

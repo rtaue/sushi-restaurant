@@ -74,12 +74,15 @@ protected:
 
 private:
 
-	/** Time when cooking started (only relevant during Processing) */
-	UPROPERTY()
+	/** Time when cooking started — replicated to allow client-side progress */
+	UPROPERTY(ReplicatedUsing = OnRep_CookingStartTime)
 	float CookingStartTime = 0.f;
 
+	UFUNCTION()
+	void OnRep_CookingStartTime() const;
+
 	/** Duration for the cooking process */
-	UPROPERTY()
+	UPROPERTY(Replicated)
 	float CookingDuration = 0.f;
 
 	/** Timer handle used by the server */

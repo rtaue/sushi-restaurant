@@ -6,6 +6,7 @@
 #include "GameFramework/PlayerController.h"
 #include "SushiRestaurantPlayerController.generated.h"
 
+class UScoreWidget;
 struct FInputActionValue;
 class UInputAction;
 class UInputMappingContext;
@@ -20,6 +21,8 @@ class ASushiRestaurantPlayerController : public APlayerController
 	GENERATED_BODY()
 	
 protected:
+
+	virtual void BeginPlay() override;
 
 	/** Input Mapping Contexts */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category ="Input", meta = (AllowPrivateAccess = "true"))
@@ -44,4 +47,25 @@ protected:
 
 	UFUNCTION(Server, Reliable)
 	void Server_OnInteract();
+
+#pragma region Widgets
+
+	/** Widget class used to display the score */
+	UPROPERTY(EditDefaultsOnly, Category = "UI")
+	TSubclassOf<UScoreWidget> ScoreWidgetClass;
+
+	/** Runtime instance of the score display */
+	UPROPERTY()
+	UScoreWidget* ScoreWidget;
+	
+	/** Respond to score update events */
+	UFUNCTION()
+	void HandleScoreUpdated(float NewScore);
+
+	/** Adds all gameplay widgets to the screen */
+	void CreateGameplayWidgets();
+
+#pragma endregion
 };
+
+

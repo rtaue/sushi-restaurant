@@ -58,13 +58,7 @@ void UOrderWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
 {
 	Super::NativeTick(MyGeometry, InDeltaTime);
 
-	if (CachedOrder.Status != EOrderStatus::Pending)
-	{
-		// Hide progress when order is done
-		if (Time_ProgressBar) Time_ProgressBar->SetPercent(0.f);
-		if (Timer_TextBlock) Timer_TextBlock->SetText(FText::GetEmpty());
-		return;
-	}
+	if (CachedOrder.Status != EOrderStatus::Pending) return;
 
 	const float WorldTime = GetWorld()->GetTimeSeconds();
 	const float TimeRemaining = CachedOrder.GetTimeRemaining(WorldTime);
