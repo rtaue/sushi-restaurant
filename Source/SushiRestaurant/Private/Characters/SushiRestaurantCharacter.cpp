@@ -242,7 +242,41 @@ void ASushiRestaurantCharacter::UnlockFromStation()
 	LockedStation = nullptr;
 }
 
-void ASushiRestaurantCharacter::PlayInteractionMontage(UAnimMontage* Montage)
+void ASushiRestaurantCharacter::RequestPlayInteractionMontage(UAnimMontage* Montage)
+{
+	if (HasAuthority())
+	{
+		Multicast_PlayPlayInteractionMontage(Montage);
+	}
+	else
+	{
+		Server_PlayInteractionMontage(Montage);
+	}
+}
+
+void ASushiRestaurantCharacter::RequestStopInteractionMontage()
+{
+	if (HasAuthority())
+	{
+		Multicast_StopInteractionMontage();
+	}
+	else
+	{
+		Server_StopInteractionMontage();
+	}
+}
+
+void ASushiRestaurantCharacter::Server_PlayInteractionMontage_Implementation(UAnimMontage* Montage)
+{
+	Multicast_PlayPlayInteractionMontage(Montage);
+}
+
+void ASushiRestaurantCharacter::Multicast_PlayPlayInteractionMontage_Implementation(UAnimMontage* Montage)
+{
+	PlayInteractionMontage(Montage);
+}
+
+void ASushiRestaurantCharacter::PlayInteractionMontage(UAnimMontage* Montage) const
 {
 	if (!Montage) return;
 
@@ -252,7 +286,17 @@ void ASushiRestaurantCharacter::PlayInteractionMontage(UAnimMontage* Montage)
 	}
 }
 
-void ASushiRestaurantCharacter::StopInteractionMontage()
+void ASushiRestaurantCharacter::Server_StopInteractionMontage_Implementation()
+{
+	Multicast_StopInteractionMontage();
+}
+
+void ASushiRestaurantCharacter::Multicast_StopInteractionMontage_Implementation()
+{
+	StopInteractionMontage();
+}
+
+void ASushiRestaurantCharacter::StopInteractionMontage() const
 {
 	if (UAnimInstance* AnimInstance = GetMesh()->GetAnimInstance())
 	{

@@ -89,7 +89,7 @@ void ACookwareStation::Interact_Implementation(AActor* Interactor)
 				CurrentUser = Character;
 
 				Character->LockToStation(this);
-				Character->PlayInteractionMontage(InteractionMontage);
+				Character->RequestPlayInteractionMontage(InteractionMontage);
 
 				Cookable->OnCookingFinished.AddDynamic(this, &ACookwareStation::OnIngredientCooked);
 				Cookable->StartCooking(CookingTime, this);
@@ -133,7 +133,7 @@ void ACookwareStation::OnIngredientCooked(AActor* CookedActor)
 
 	if (CurrentUser)
 	{
-		CurrentUser->StopInteractionMontage();
+		CurrentUser->RequestStopInteractionMontage();
 		CurrentUser->UnlockFromStation();
 		CurrentUser = nullptr;
 	}

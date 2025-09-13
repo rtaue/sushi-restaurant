@@ -126,10 +126,27 @@ public:
 #pragma endregion
 
 public:
+	UFUNCTION(Blueprintable)
+	void RequestPlayInteractionMontage(UAnimMontage* Montage);
+	UFUNCTION(Blueprintable)
+	void RequestStopInteractionMontage();
+
+private:
+	
+	UFUNCTION(Server, Reliable)
+	void Server_PlayInteractionMontage(UAnimMontage* Montage);
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_PlayPlayInteractionMontage(UAnimMontage* Montage);
+
 	/** Plays a given interaction montage */
-	void PlayInteractionMontage(UAnimMontage* Montage);
+	void PlayInteractionMontage(UAnimMontage* Montage) const;
+
+	UFUNCTION(Server, Reliable)
+	void Server_StopInteractionMontage();
+	UFUNCTION(NetMulticast, Reliable)
+	void Multicast_StopInteractionMontage();
 
 	/** Stops interaction montage */
-	void StopInteractionMontage();
+	void StopInteractionMontage() const;
 };
 
