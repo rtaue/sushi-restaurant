@@ -6,6 +6,7 @@
 #include "Characters/SushiRestaurantCharacter.h"
 #include "Components/WidgetComponent.h"
 #include "Gameplay/Cooking/CookableComponent.h"
+#include "Gameplay/Equip/EquippedVisualData.h"
 #include "Net/UnrealNetwork.h"
 #include "SushiRestaurant/SushiRestaurant.h"
 #include "Utils/GameplayUtils.h"
@@ -69,7 +70,7 @@ void ACookwareStation::Interact_Implementation(AActor* Interactor)
 	{
 		if (Character->IsHoldingItem())
 		{
-			AActor* Item = Character->HeldItem;
+			AActor* Item = Character->GetHeldItem();
 
 			if (!AcceptedIngredientClass || !Item->IsA(AcceptedIngredientClass))
 			{
@@ -89,7 +90,7 @@ void ACookwareStation::Interact_Implementation(AActor* Interactor)
 				CurrentUser = Character;
 
 				Character->LockToStation(this);
-				Character->RequestPlayInteractionMontage(InteractionMontage);
+				Character->RequestInteraction(InteractionMontage, InteractionEquipment);
 
 				Cookable->OnCookingFinished.AddDynamic(this, &ACookwareStation::OnIngredientCooked);
 				Cookable->StartCooking(CookingTime, this);
@@ -133,7 +134,7 @@ void ACookwareStation::OnIngredientCooked(AActor* CookedActor)
 
 	if (CurrentUser)
 	{
-		CurrentUser->RequestStopInteractionMontage();
+		CurrentUser->RequestStopInteraction();
 		CurrentUser->UnlockFromStation();
 		CurrentUser = nullptr;
 	}

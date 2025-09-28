@@ -69,7 +69,7 @@ void ADeliveryStation::Interact_Implementation(AActor* Interactor)
 	if (!Character) return;
 
 	// Tries to deliver dish
-	if (AActor* HeldItem = Character->HeldItem)
+	if (AActor* HeldItem = Character->GetHeldItem())
 	{
 		if (SubmitDish(HeldItem))
 		{

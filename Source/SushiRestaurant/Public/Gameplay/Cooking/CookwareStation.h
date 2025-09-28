@@ -6,6 +6,7 @@
 #include "Gameplay/Cooking/StationBase.h"
 #include "CookwareStation.generated.h"
 
+enum class EEquippedVisual : uint8;
 class UWidgetComponent;
 class UCookingProgressWidget;
 class ASushiRestaurantCharacter;
@@ -54,6 +55,9 @@ protected:
 	/** Montage to be played by the interacting character */
 	UPROPERTY(EditDefaultsOnly, Category = "Animation")
 	UAnimMontage* InteractionMontage;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	EEquippedVisual InteractionEquipment;
 
 	/** Widget component to show cooking progress */
 	UPROPERTY(VisibleAnywhere, Category = "UI")
